@@ -25,6 +25,10 @@
   src: url("./fonts/SanFranciscoProFonts/SF-Pro-Display-Ultralight.otf");
 }
 
+#root {
+  display: flex;
+}
+
 body {
   height: 100vh;
   color: white;
@@ -38,7 +42,9 @@ body {
   background-color: var(--background);
   width: 375px;
   padding: 0 5px;
+  /* padding-top: 1px; */
   height: 712px;
+  /* display: inline-block; */
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
