@@ -11,3 +11,16 @@ export const timeFormatter = (timeInMilliseconds) => {
   );
   return `${hours ? `${hours}:` : ""}${minutes}:${seconds}.${centiSeconds}`;
 };
+
+export const checkLapClass = (laps, lap, bestWorstLap) => {
+  let lapClass = "";
+  if (laps.length > 1) {
+    if (lap === bestWorstLap.best) {
+      lapClass = "lap-container__letter-green";
+    } else if (lap === bestWorstLap.worst) {
+      lapClass = "lap-container__letter-red";
+    }
+  }
+
+  return { lapClass };
+};

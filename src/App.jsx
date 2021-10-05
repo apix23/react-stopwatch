@@ -1,68 +1,52 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Button from "./components/Button";
 import "./App.css";
-import { timeFormatter } from "./utils/functions";
+import { timeFormatter, checkLapClass } from "./utils/functions";
 import EmptyLap from "./components/EmptyLap";
 import Lap from "./components/Lap";
-
-const { log: c } = console;
+import { useTimer } from "./hooks/useTimer";
 
 function App() {
-  const [isRunning, setIsRunning] = useState(false);
   const [laps, setLaps] = useState([]);
-  const [timing, setTiming] = useState(0);
-  const DEFAULT_EMPTY_VALUE = 6;
-  const lapSum = useMemo(
-    () => laps.reduce((acc, curr) => acc + curr, 0),
-    [laps]
-  );
-
-  const lapTime = timing - lapSum;
 
   const [bestWorstLap, setBestWorstLap] = useState({
     best: Infinity,
     worst: -Infinity,
   });
 
-  useEffect(() => {
-    if (isRunning) {
-      const startTime = Date.now() - timing;
-      const interval = setInterval(() => {
-        const currentTime = Date.now();
-        setTiming(currentTime - startTime);
-      }, 16);
-      return () => {
-        clearInterval(interval);
-      };
-    }
-  }, [isRunning]);
+  const [timer, handleStartStop, resetTimeStamp] = useTimer();
 
-  const handleLapReset = () => {
-    if (!isRunning) {
-      setTiming(0);
-      setLaps([]);
-      setBestWorstLap({
-        best: Infinity,
-        worst: -Infinity,
-      });
-    } else {
-      setLaps([lapTime, ...laps]);
+  const DEFAULT_EMPTY_VALUE = 6;
 
-      setBestWorstLap({
-        worst: lapTime > bestWorstLap.worst ? lapTime : bestWorstLap.worst,
-        best: lapTime < bestWorstLap.best ? lapTime : bestWorstLap.best,
-      });
-    }
+  const lapSum = useMemo(
+    () => laps.reduce((acc, curr) => acc + curr, 0),
+    [laps]
+  );
+
+  const lapTime = timer.timeStamp - lapSum;
+
+  const reset = () => {
+    resetTimeStamp();
+    setLaps([]);
+    setBestWorstLap({
+      best: Infinity,
+      worst: -Infinity,
+    });
   };
 
-  const handleStartStop = () => {
-    if (!timing) {
-    }
-    setIsRunning(!isRunning);
+  const createNewLap = () => {
+    setLaps([lapTime, ...laps]);
+
+    setBestWorstLap({
+      worst: lapTime > bestWorstLap.worst ? lapTime : bestWorstLap.worst,
+      best: lapTime < bestWorstLap.best ? lapTime : bestWorstLap.best,
+    });
   };
+
+  const handleLapReset = !timer.isRunning ? reset : createNewLap;
 
   const drawEmptyLaps = (numberOfLaps) => {
-    if (timing && isRunning) {
+    if (timer.timeStamp) {
       numberOfLaps -= 1;
     }
     const emptyLaps = numberOfLaps - laps.length;
@@ -74,16 +58,9 @@ function App() {
   };
 
   const drawLaps = () => {
-    return laps.map((lap, i) => {
-      let lapClass = "";
-      const lapNumber = laps.length - i;
-      if (laps.length > 1) {
-        if (lap === bestWorstLap.best) {
-          lapClass = "lap-container__letter-green";
-        } else if (lap === bestWorstLap.worst) {
-          lapClass = "lap-container__letter-red";
-        }
-      }
+    return laps.map((lap, index) => {
+      const { lapClass } = checkLapClass(laps, lap, bestWorstLap);
+      const lapNumber = laps?.length - index;
       return (
         <Lap
           key={lapNumber}
@@ -96,30 +73,33 @@ function App() {
   };
 
   const timingLap =
-    timing > 0 ? (
+    timer.timeStamp > 0 ? (
       <Lap numberLap={laps.length + 1} time={lapTime} clapClass="" />
     ) : null;
 
-  const classRightButton = `controllers__${isRunning ? "stop" : "start"}`;
+  const classRightButton = `controllers__${timer.isRunning ? "stop" : "start"}`;
   const classLeftButton = `controllers__${
-    isRunning || laps.length > 0 ? "lap" : "disabled"
+    timer.isRunning || laps.length > 0 ? "lap" : "disabled"
   }`;
+
+  const lapResetText = timer.isRunning || laps.length === 0 ? "Lap" : "Reset";
+  const startStopText = timer.isRunning ? "Stop" : "Start";
 
   return (
     <div className="main">
-      <p className="timer">{timeFormatter(timing)}</p>
+      <p className="timer">{timeFormatter(timer.timeStamp)}</p>
 
       <div className="controllers">
         <button
           onClick={handleLapReset}
-          disabled={!timing}
+          disabled={!timer.timeStamp}
           className={classLeftButton}
         >
-          {isRunning && laps.length >= 0 ? "Lap" : "Reset"}
+          {lapResetText}
         </button>
 
         <button onClick={handleStartStop} className={classRightButton}>
-          {isRunning ? "Stop" : "Start"}
+          {startStopText}
         </button>
       </div>
 
