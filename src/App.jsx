@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useReducer, useMemo } from "react";
 import Button from "./components/Button";
 import "./App.css";
 import { timeFormatter, checkLapClass } from "./utils/functions";
 import EmptyLap from "./components/EmptyLap";
 import Lap from "./components/Lap";
 import { useTimer } from "./hooks/useTimer";
+import { Actions, initialState, reducer } from "./utils/reducer";
 
 function App() {
+  const [timer, dispatch] = useReducer(reducer, initialState);
+
   const [laps, setLaps] = useState([]);
 
   const [bestWorstLap, setBestWorstLap] = useState({
@@ -14,20 +17,19 @@ function App() {
     worst: -Infinity,
   });
 
-  const [timer, handleStartStop, resetTimeStamp] = useTimer();
+  useTimer(timer, dispatch);
 
   const DEFAULT_EMPTY_VALUE = 6;
 
   const lapSum = useMemo(
-    () => laps.reduce((acc, curr) => acc + curr, 0),
-    [laps]
+    () => timer.laps.reduce((acc, curr) => acc + curr, 0),
+    [timer.laps]
   );
 
   const lapTime = timer.timeStamp - lapSum;
 
   const reset = () => {
-    resetTimeStamp();
-    setLaps([]);
+    dispatch({ type: Actions.RESET_TIME });
     setBestWorstLap({
       best: Infinity,
       worst: -Infinity,
@@ -35,8 +37,7 @@ function App() {
   };
 
   const createNewLap = () => {
-    setLaps([lapTime, ...laps]);
-
+    dispatch({ type: Actions.ADD_NEW_LAP, payload: lapTime });
     setBestWorstLap({
       worst: lapTime > bestWorstLap.worst ? lapTime : bestWorstLap.worst,
       best: lapTime < bestWorstLap.best ? lapTime : bestWorstLap.best,
@@ -44,6 +45,8 @@ function App() {
   };
 
   const handleLapReset = !timer.isRunning ? reset : createNewLap;
+
+  const handleStartStop = () => dispatch({ type: Actions.TOGGLE_RUNNING });
 
   const drawEmptyLaps = (numberOfLaps) => {
     if (timer.timeStamp) {
@@ -58,9 +61,14 @@ function App() {
   };
 
   const drawLaps = () => {
-    return laps.map((lap, index) => {
-      const { lapClass } = checkLapClass(laps, lap, bestWorstLap);
-      const lapNumber = laps?.length - index;
+    return timer.laps.map((lap, index) => {
+      const { lapClass } = checkLapClass(
+        timer.laps,
+        lap,
+        timer.best,
+        timer.worst
+      );
+      const lapNumber = timer.laps?.length - index;
       return (
         <Lap
           key={lapNumber}
@@ -74,15 +82,16 @@ function App() {
 
   const timingLap =
     timer.timeStamp > 0 ? (
-      <Lap numberLap={laps.length + 1} time={lapTime} clapClass="" />
+      <Lap numberLap={timer.laps.length + 1} time={lapTime} lapClass="" />
     ) : null;
 
   const classRightButton = `controllers__${timer.isRunning ? "stop" : "start"}`;
   const classLeftButton = `controllers__${
-    timer.isRunning || laps.length > 0 ? "lap" : "disabled"
+    timer.isRunning || timer.laps.length > 0 ? "lap" : "disabled"
   }`;
 
-  const lapResetText = timer.isRunning || laps.length === 0 ? "Lap" : "Reset";
+  const lapResetText =
+    timer.isRunning || timer.laps.length === 0 ? "Lap" : "Reset";
   const startStopText = timer.isRunning ? "Stop" : "Start";
 
   return (
