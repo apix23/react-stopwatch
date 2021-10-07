@@ -10,13 +10,6 @@ import { Actions, initialState, reducer } from "./utils/reducer";
 function App() {
   const [timer, dispatch] = useReducer(reducer, initialState);
 
-  const [laps, setLaps] = useState([]);
-
-  const [bestWorstLap, setBestWorstLap] = useState({
-    best: Infinity,
-    worst: -Infinity,
-  });
-
   useTimer(timer, dispatch);
 
   const DEFAULT_EMPTY_VALUE = 6;
@@ -30,18 +23,10 @@ function App() {
 
   const reset = () => {
     dispatch({ type: Actions.RESET_TIME });
-    setBestWorstLap({
-      best: Infinity,
-      worst: -Infinity,
-    });
   };
 
   const createNewLap = () => {
     dispatch({ type: Actions.ADD_NEW_LAP, payload: lapTime });
-    setBestWorstLap({
-      worst: lapTime > bestWorstLap.worst ? lapTime : bestWorstLap.worst,
-      best: lapTime < bestWorstLap.best ? lapTime : bestWorstLap.best,
-    });
   };
 
   const handleLapReset = !timer.isRunning ? reset : createNewLap;
@@ -52,7 +37,7 @@ function App() {
     if (timer.timeStamp) {
       numberOfLaps -= 1;
     }
-    const emptyLaps = numberOfLaps - laps.length;
+    const emptyLaps = numberOfLaps - timer.laps.length;
     if (emptyLaps > 0) {
       return Array(emptyLaps)
         .fill("")
@@ -62,12 +47,11 @@ function App() {
 
   const drawLaps = () => {
     return timer.laps.map((lap, index) => {
-      const { lapClass } = checkLapClass(
-        timer.laps,
-        lap,
-        timer.best,
-        timer.worst
-      );
+      const lapClass =
+        timer.laps.length > 1
+          ? checkLapClass(lap, timer.best, timer.worst)
+          : "";
+
       const lapNumber = timer.laps?.length - index;
       return (
         <Lap

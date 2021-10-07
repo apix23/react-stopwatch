@@ -12,15 +12,14 @@ export const timeFormatter = (timeInMilliseconds) => {
   return `${hours ? `${hours}:` : ""}${minutes}:${seconds}.${centiSeconds}`;
 };
 
-export const checkLapClass = (laps, lap, best, worst) => {
+export const checkLapClass = (lap, best, worst) => {
   let lapClass = "";
-  if (laps.length > 1) {
-    if (lap === best) {
-      lapClass = "lap-container__letter-green";
-    } else if (lap === worst) {
-      lapClass = "lap-container__letter-red";
-    }
+
+  if (lap === best) {
+    lapClass = "lap-container__letter-green";
+  } else if (lap === worst) {
+    lapClass = "lap-container__letter-red";
   }
 
-  return { lapClass };
+  return lapClass;
 };
